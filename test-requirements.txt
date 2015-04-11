@@ -2,3 +2,4 @@ tox
 nose
 coverage
 hacking
+openstack.nose_plugin

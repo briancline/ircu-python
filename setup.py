@@ -1,5 +1,7 @@
 from setuptools import setup
+
 from ircu.consts import version_str
+
 
 setup(
     name='ircu',
