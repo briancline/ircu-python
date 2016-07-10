@@ -30,6 +30,13 @@ class Numeric(object):
     def int(self):
         return self._numeric
 
+    @property
+    def str(self):
+        return self._numeric_str
+
+    def __int__(self):
+        return self._numeric
+
     def __str__(self):
         return self._numeric_str
 

@@ -37,6 +37,8 @@ class TestBase64(unittest.TestCase):
     def test_numeric_server_int(self):
         n = util.Numeric(1156)
         self.assertEqual(str(n), 'SE')
+        self.assertEqual(int(n), 1156)
+        self.assertEqual(n.str, 'SE')
         self.assertEqual(n.int, 1156)
 
     def test_numeric_server_str(self):
