@@ -17,6 +17,7 @@ setup(
     packages=['ircu'],
     install_requires=open('requirements.txt').readlines(),
     test_suite='nose.collector',
+    zip_safe=False,
     classifiers=[
         'Development Status :: 1 - Planning',
         'License :: OSI Approved :: MIT License',
