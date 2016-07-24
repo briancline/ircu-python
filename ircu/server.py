@@ -1,4 +1,7 @@
 # AE S services.ircplanet.net 2 0 1116989941 P10 M[AB] +s :Network Services
+import six
+
+from ircu import consts
 from ircu import util
 
 
@@ -10,7 +13,11 @@ class Server(object):
         self._name = name
         self._info = info
         self._proto = proto
-        self._max_clients = max_clients
+
+        self._max_clients = consts.DEFAULT_MAX_CLIENTS
+        if isinstance(max_clients, six.string_types):
+            self._max_clients = util.base64_to_int(max_clients)
+
         self._flags = flags
         self._boot_time = boot_time
         self._link_time = link_time
@@ -18,6 +25,7 @@ class Server(object):
         self._uplink_num = None
         if uplink_num:
             self._uplink_num = util.server_num_int(uplink_num)
+
         self._hops = num_hops
 
     @property

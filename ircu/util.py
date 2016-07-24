@@ -1,4 +1,7 @@
+import datetime
+import logging
 import six
+import time
 
 from ircu import consts
 
@@ -58,6 +61,35 @@ class FullNumeric(Numeric):
             self._numeric_str[consts.BASE64_SERVLEN:self._length])
 
 
+class LogFormatter(logging.Formatter):
+    converter = datetime.datetime.fromtimestamp
+
+    def __init__(self, *args, **kwargs):
+        kwargs['fmt'] = (
+            kwargs.get('fmt') or
+            '[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s')
+        super(LogFormatter, self).__init__(*args, **kwargs)
+
+    def formatTime(self, record, datefmt=None):
+        if datefmt:
+            return self.converter(record.created).strftime(datefmt)
+
+        time_str = time.strftime('%Y-%m-%dT%H:%M:%S.{msec}%z')
+        time_str = time_str.format(msec='%03d' % record.msecs)
+        return time_str
+
+
+def load_config(file_name):
+    config = six.moves.configparser.SafeConfigParser()
+
+    # TODO(bc): set all defaults
+    config.add_section('uplink')
+    config.set('uplink', 'timeout', '2.0')
+
+    config.read(file_name)
+    return config
+
+
 def int_to_base64(n, count):
     buf = ''
     while count:
@@ -89,3 +121,26 @@ def server_num_int(s):
 
 def user_num_int(s):
     return base64_to_int(s)
+
+
+def parse_server_num_maxconn(s):
+    """Parse and return a combined server numeric and max connections count."""
+    if len(s) <= consts.BASE64_SERVLEN:
+        raise ValueError('An encoded server numeric and max connections must '
+                         'be at least %d characters' %
+                         consts.BASE64_SERVLEN + 1)
+
+    svr_num = s[0:consts.BASE64_SERVLEN]
+    max_conn = base64_to_int(s[consts.BASE64_SERVLEN:])
+    return svr_num, max_conn
+
+
+def irc_split(line):
+    """Split an event line, with any trailing free-form text as one item."""
+    line = line.rstrip('\r\n')
+    try:
+        rest_pos = line.index(' :')
+        bits = line[0:rest_pos].split(' ') + [line[rest_pos + 2:]]
+    except ValueError:
+        bits = line.split(' ')
+    return bits

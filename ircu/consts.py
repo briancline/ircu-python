@@ -2,6 +2,11 @@ version = (0, 0, 1)
 version_str = '.'.join(str(n) for n in version)
 
 
+FMT_PASS = 'PASS :%s'
+FMT_SERVER_SELF = 'SERVER %s 1 %lu %lu J10 %s%s +%s :%s'
+
+DEFAULT_MAX_CLIENTS = 262144
+
 BASE64_USERMAX = 262143
 BASE64_SERVLEN = 2
 BASE64_USERLEN = 3
