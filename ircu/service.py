@@ -135,6 +135,10 @@ class Service(object):
                 raise ValueError('Unknown client: %r' % num_client)
 
         handler_type = proto.handler_lookup(token)
+        if not handler_type:
+            self.logger.critical('No handler for token %s', token)
+            return
+
         handler = handler_type(service=self,
                                network=self.network,
                                logger=self.logger)

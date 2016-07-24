@@ -1,5 +1,6 @@
 tox
 nose
 coverage
-hacking
+hacking==0.9.6
 openstack.nose_plugin
+mock

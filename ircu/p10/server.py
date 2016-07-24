@@ -20,8 +20,8 @@ class MessageHandler(p10.MessageHandler):
                             info=args[7],
                             max_clients=max_conn,
                             num_hops=int(args[1]),
-                            boot_time=long(args[2]),
-                            link_time=long(args[3]),
+                            boot_time=int(args[2]),
+                            link_time=int(args[3]),
                             proto=args[4],
                             flags=args[6])
         self.network.servers[svr_num] = svr
@@ -36,8 +36,8 @@ class MessageHandler(p10.MessageHandler):
                             info=args[7],
                             max_clients=max_conn,
                             num_hops=int(args[1]),
-                            boot_time=long(args[2]),
-                            link_time=long(args[3]),
+                            boot_time=int(args[2]),
+                            link_time=int(args[3]),
                             proto=args[4],
                             flags=args[6])
         self.network.servers[svr_num] = svr

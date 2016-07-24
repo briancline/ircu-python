@@ -1,7 +1,8 @@
 import datetime
 import logging
-import six
 import time
+
+import six
 
 from ircu import consts
 
@@ -86,7 +87,7 @@ def load_config(file_name):
     config.add_section('uplink')
     config.set('uplink', 'timeout', '2.0')
 
-    config.read(file_name)
+    config.readfp(open(file_name, 'r'))
     return config
 
 
