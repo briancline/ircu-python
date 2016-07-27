@@ -99,6 +99,9 @@ def load_config(file_name):
     config.add_section('bot')
     config.set('bot', 'numeric', '0')
 
+    config.add_section('logging')
+    config.set('logging', 'level', 'INFO')
+
     config.readfp(open(file_name, 'r'))
     return config
 
