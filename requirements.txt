@@ -1,1 +1,2 @@
 six
+ipaddr ; python_version < '3.4'

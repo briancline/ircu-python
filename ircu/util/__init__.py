@@ -2,6 +2,15 @@ import datetime
 import logging
 import time
 
+try:
+    import ipaddress
+    ip_address = ipaddress.ip_address
+    ip_type = ipaddress._BaseAddress
+except ImportError:
+    import ipaddr
+    ip_address = ipaddr.IPAddress
+    ip_type = ipaddr._BaseIP
+
 import six
 
 from ircu import consts
@@ -87,6 +96,9 @@ def load_config(file_name):
     config.add_section('uplink')
     config.set('uplink', 'timeout', '2.0')
 
+    config.add_section('bot')
+    config.set('bot', 'numeric', '0')
+
     config.readfp(open(file_name, 'r'))
     return config
 
@@ -106,6 +118,16 @@ def base64_to_int(s):
         n = n << 6
         n += consts.BASE64_NUM_TO_INT[ord(s[ii])]
     return n
+
+
+def base64_to_ip(s):
+    ip_int = base64_to_int(s)
+    return ip_address(ip_int)
+
+
+def ip_to_base64(s):
+    ip = s if isinstance(s, ip_type) else ip_address(s)
+    return int_to_base64(int(ip), consts.BASE64_IPLEN)
 
 
 def server_num_str(s):

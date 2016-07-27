@@ -10,6 +10,7 @@ from ircu import consts
 from ircu import network
 from ircu import proto
 from ircu import server
+from ircu import user
 from ircu import util
 from ircu.util import string as util_string
 
@@ -34,6 +35,20 @@ class Service(object):
             link_time=time.time())
         self.network.servers[self.server.num.str] = self.server
         self.uplink = None
+
+        full_bot_num = (self.server.num.str +
+                        util.user_num_str(conf.getint('bot', 'numeric')))
+        self.bot = user.User(
+            numeric=full_bot_num,
+            nick=conf.get('bot', 'nick'),
+            ident=conf.get('bot', 'ident'),
+            host=conf.get('bot', 'host'),
+            ip=util.ip_to_base64(conf.get('bot', 'ip')),
+            info=conf.get('bot', 'info'),
+            modes=conf.get('bot', 'modes'),
+            num_hops=0,
+            connect_time=time.time())
+        self.network.users[self.bot.num.str] = self.bot
 
         self.conn = None
         self.send_queue = []
@@ -79,6 +94,20 @@ class Service(object):
                       svr.modes or '+',
                       svr.info)
 
+    def burst_users(self):
+        for usr_num, usr in self.network.users.iteritems():
+            self.send(consts.FMT_NICK,
+                      self.server.num,
+                      usr.nick,
+                      1,
+                      usr.connect_time,
+                      usr.ident,
+                      usr.host,
+                      usr.modes or '+',
+                      util.ip_to_base64(usr.ip),
+                      usr.num,
+                      usr.info)
+
     def run(self):
         self.connect()
         self.conn.setblocking(False)
@@ -94,6 +123,7 @@ class Service(object):
                   self.server.info)
 
         self.burst_servers()
+        self.burst_users()
 
         self.send(consts.FMT_ENDOFBURST, self.server.num)
 

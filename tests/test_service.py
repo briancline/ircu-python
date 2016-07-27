@@ -23,6 +23,15 @@ name = unit.ircplanet.net
 info = This is not a pipe
 modes = sh
 max_clients = 262144
+
+[bot]
+numeric = 42
+nick = unittest
+ident = unit
+host = unit.ircplanet.net
+info = Unit Test Bot
+ip = 0.0.0.0
+modes =
 """
 
 
