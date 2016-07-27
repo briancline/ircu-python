@@ -134,14 +134,3 @@ def parse_server_num_maxconn(s):
     svr_num = s[0:consts.BASE64_SERVLEN]
     max_conn = base64_to_int(s[consts.BASE64_SERVLEN:])
     return svr_num, max_conn
-
-
-def irc_split(line):
-    """Split an event line, with any trailing free-form text as one item."""
-    line = line.rstrip('\r\n')
-    try:
-        rest_pos = line.index(' :')
-        bits = line[0:rest_pos].split(' ') + [line[rest_pos + 2:]]
-    except ValueError:
-        bits = line.split(' ')
-    return bits
