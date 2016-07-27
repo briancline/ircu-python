@@ -10,6 +10,7 @@ from ircu import network
 from ircu import proto
 from ircu import server
 from ircu import util
+from ircu.util import string as util_string
 
 
 class SocketClosedException(Exception):
@@ -36,7 +37,13 @@ class Service(object):
         # self.read_timeout = self.conf.getfloat('uplink', 'timeout')
         self.conn.settimeout(self.conf.getfloat('uplink', 'timeout'))
 
-        self.logger.setLevel(logging.DEBUG)
+        log_level_str = self.conf.get('logging', 'level').upper()
+        if not hasattr(logging, log_level_str):
+            raise ValueError('"%s" is not a valid logger level' %
+                             log_level_str)
+
+        self.logger.setLevel(getattr(logging, log_level_str))
+
         console_log = logging.StreamHandler()
         console_log.setFormatter(util.LogFormatter())
         self.logger.addHandler(console_log)
@@ -51,7 +58,7 @@ class Service(object):
 
     def send(self, msg, *args):
         line = (msg % args)
-        print('[SEND] %s' % line)
+        self.logger.debug('[SEND] %s', line)
         return self.conn.sendall(six.b(line + '\n'))
 
     def run(self):
@@ -80,7 +87,7 @@ class Service(object):
                 if data == '':
                     raise SocketClosedException()
 
-                print('%r' % data)
+                # self.logger.debug('[SOCK] %r', data)
                 buf += data
             # except socket.timeout as ex:
             #     print('Socket timeout: %r: %s' % (ex.errno, ex))
@@ -92,7 +99,7 @@ class Service(object):
             #     print('Socket error: %r' % ex)
             #     raise
             except SocketClosedException:
-                print('Socket closed, exiting')
+                self.logger.warning('Socket closed, exiting')
                 break
 
             while '\n' in buf:
@@ -102,8 +109,8 @@ class Service(object):
                 self.parse(line)
 
     def parse(self, line):
-        bits = util.irc_split(line)
-        print('       %r' % bits)
+        bits = util_string.irc_split(line)
+        self.logger.debug('[RECV] %r', line)
 
         token = bits[1]
         num_src = bits[0]
@@ -142,13 +149,18 @@ class Service(object):
         handler = handler_type(service=self,
                                network=self.network,
                                logger=self.logger)
-        print('token %s has %s/%s handler %r' %
-              (token,
-               handler_type.token if handler_type else 'none',
-               handler_type.command if handler_type else 'none',
-               handler_type))
+        self.logger.debug(
+            'token %s has %s/%s handler %r',
+            token,
+            handler_type.token if handler_type else 'none',
+            handler_type.command if handler_type else 'none',
+            handler_type)
 
         res = None
         if not self.has_uplink():
             res = handler.unreg(client, src, bits[1:])
-        self.logger.info('handler result=%r', res)
+
+        if res is False:
+            self.logger.warning('Handler for %s returned false', token)
+
+        return res

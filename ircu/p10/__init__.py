@@ -9,8 +9,6 @@ class MessageHandler(object):
         self.service = kwargs.get('service')
         self.network = kwargs.get('network')
         self.logger = kwargs.get('logger') or logging.getLogger(__name__)
-        self.logger.info('initialized handler for %s/%s', self.token,
-                         self.command)
 
     def unreg(self, client, source, args):
         self.logger.debug('%s ignoring unreg msg', self.token)
