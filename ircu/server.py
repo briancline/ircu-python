@@ -40,8 +40,20 @@ class Server(object):
         return self._info
 
     @property
+    def boot_time(self):
+        return self._boot_time
+
+    @property
+    def link_time(self):
+        return self._link_time
+
+    @property
     def max_clients(self):
         return self._max_clients
+
+    @property
+    def max_clients_num(self):
+        return util.int_to_base64(self._max_clients, 3)
 
     @property
     def modes(self):

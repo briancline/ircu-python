@@ -29,7 +29,10 @@ class Service(object):
             numeric=conf.getint('server', 'numeric'),
             name=conf.get('server', 'name'),
             info=conf.get('server', 'info'),
-            max_clients=conf.getint('server', 'max_clients'))
+            max_clients=conf.getint('server', 'max_clients'),
+            boot_time=time.time(),
+            link_time=time.time())
+        self.network.servers[self.server.num.str] = self.server
         self.uplink = None
 
         self.conn = None
@@ -62,18 +65,37 @@ class Service(object):
         self.logger.debug('[SEND] %s', line)
         return self.conn.sendall(six.b(line + '\n'))
 
+    def burst_servers(self):
+        for svr_num, svr in self.network.servers.iteritems():
+            if svr_num == self.server.num.str:
+                continue
+            self.send(consts.FMT_SERVER,
+                      server.num,
+                      svr.name,
+                      1,
+                      svr.boot_time,
+                      svr.num,
+                      svr.max_clients_num,
+                      svr.modes or '+',
+                      svr.info)
+
     def run(self):
         self.connect()
         self.conn.setblocking(False)
 
         self.send(consts.FMT_PASS, self.conf.get('uplink', 'password'))
         self.send(consts.FMT_SERVER_SELF,
-                  self.conf.get('server', 'name'),
-                  self.start_time, self.link_time,
+                  self.server.name,
+                  self.server.boot_time,
+                  self.server.link_time,
                   self.server.num,
-                  util.int_to_base64(self.server.max_clients, 3),
-                  self.conf.get('server', 'modes'),
+                  self.server.max_clients_num,
+                  self.server.modes,
                   self.server.info)
+
+        self.burst_servers()
+
+        self.send(consts.FMT_ENDOFBURST, self.server.num)
 
         buf = ''
         while True:
