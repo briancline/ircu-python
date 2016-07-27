@@ -24,6 +24,7 @@ class MessageHandler(p10.MessageHandler):
                             proto=args[4],
                             modes=args[6])
         self.network.servers[svr_num] = svr
+        self.service.uplink = self.network.servers[svr_num]
 
     def server(self, client, source, args):
         # AE S services.ircplanet.net 2 0 1116989941 P10 M[AB] +s :a server

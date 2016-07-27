@@ -1,3 +1,4 @@
+import errno
 import logging
 import select
 import socket
@@ -22,19 +23,22 @@ class Service(object):
         self.conf = conf
         self.logger = logger or logging.getLogger(__name__)
 
-        self.network = network.Network()
+        self.network = network.Network(service=self)
+
         self.server = server.Server(
             numeric=conf.getint('server', 'numeric'),
             name=conf.get('server', 'name'),
             info=conf.get('server', 'info'),
             max_clients=conf.getint('server', 'max_clients'))
+        self.uplink = None
 
         self.conn = None
+        self.send_queue = []
+
         self.start_time = time.time()
         self.link_time = None
 
         self.conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.read_timeout = self.conf.getfloat('uplink', 'timeout')
         self.conn.settimeout(self.conf.getfloat('uplink', 'timeout'))
 
         log_level_str = self.conf.get('logging', 'level').upper()
@@ -47,9 +51,6 @@ class Service(object):
         console_log = logging.StreamHandler()
         console_log.setFormatter(util.LogFormatter())
         self.logger.addHandler(console_log)
-
-    def has_uplink(self):
-        return len(self.network.servers) > 0
 
     def connect(self):
         self.link_time = time.time()
@@ -77,35 +78,40 @@ class Service(object):
         buf = ''
         while True:
             try:
+                if self.send_queue:
+                    for line in self.send_queue:
+                        self.send(line)
+                    self.send_queue = []
+
                 ready_read, ready_write, ready_exc = select.select(
                     [self.conn], [], [], 5)
 
                 if not ready_read:
                     continue
 
-                data = self.conn.recv(1024)
+                try:
+                    data = self.conn.recv(1024)
+                except socket.error as ex:
+                    self.logger.exception('Exception on socket read: [%d] %s',
+                                          ex.errno, ex.strerror)
+                    if ex.errno == errno.ECONNRESET:
+                        raise SocketClosedException(ex)
+                    elif ex.errno == errno.EAGAIN:
+                        # OSX: send() on a closed socket yields EAGAIN
+                        raise SocketClosedException(ex)
+                    else:
+                        raise
+
                 if data == '':
                     raise SocketClosedException()
 
-                # self.logger.debug('[SOCK] %r', data)
                 buf += data
-            # except socket.timeout as ex:
-            #     print('Socket timeout: %r: %s' % (ex.errno, ex))
-            #     # if self.conn.status
-            #     if ex.errno is None:
-            #         continue
-            #     raise
-            # except socket.error as ex:
-            #     print('Socket error: %r' % ex)
-            #     raise
             except SocketClosedException:
                 self.logger.warning('Socket closed, exiting')
                 break
 
-            while '\n' in buf:
-                eol_idx = buf.index('\n')
-                line = buf[0:eol_idx]
-                buf = buf[eol_idx + 1:]
+            for nextbuf, line in util_string.irc_buffer_lines(buf):
+                buf = nextbuf
                 self.parse(line)
 
     def parse(self, line):
@@ -118,49 +124,32 @@ class Service(object):
         src = None
         client = None
 
-        if not self.has_uplink() and bits[0][0] != ':':
+        if not self.uplink and bits[0][0] != ':':
             token = bits[0]
             num_src = None
             num_client = None
 
         if num_src:
-            src_len = len(num_src)
-            if src_len == consts.BASE64_SERVLEN:
-                src = self.network.servers.get(num_src)
-            elif src_len == consts.BASE64_USERLEN:
-                src = self.network.users.get(num_src)
-            else:
-                raise ValueError('Unknown source: %r' % num_src)
+            src = self.network.resolve_numeric(num_src)
 
         if num_client:
-            cli_len = len(num_client)
-            if cli_len == consts.BASE64_SERVLEN:
-                client = self.network.servers.get(num_client)
-            elif cli_len == consts.BASE64_USERLEN:
-                client = self.network.users.get(num_client)
-            else:
-                raise ValueError('Unknown client: %r' % num_client)
+            client = self.network.resolve_numeric(num_client)
 
         handler_type = proto.handler_lookup(token)
         if not handler_type:
             self.logger.critical('No handler for token %s', token)
-            return
+            return None
 
         handler = handler_type(service=self,
                                network=self.network,
                                logger=self.logger)
-        self.logger.debug(
-            'token %s has %s/%s handler %r',
-            token,
-            handler_type.token if handler_type else 'none',
-            handler_type.command if handler_type else 'none',
-            handler_type)
+        handler_res = None
+        if not self.uplink:
+            handler_res = handler.unreg(client, src, bits[1:])
+        else:
+            handler_res = handler.server(client, src, bits[0:])
 
-        res = None
-        if not self.has_uplink():
-            res = handler.unreg(client, src, bits[1:])
-
-        if res is False:
+        if handler_res is False:
             self.logger.warning('Handler for %s returned false', token)
 
-        return res
+        return handler_res
