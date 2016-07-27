@@ -1,4 +1,5 @@
 from ircu.p10 import endofburst as p10_endofburst
+from ircu.p10 import endofburst_ack as p10_endofburst_ack
 from ircu.p10 import nick as p10_nick
 from ircu.p10 import passw as p10_pass
 from ircu.p10 import ping as p10_ping
@@ -11,6 +12,7 @@ HANDLERS = {
     ('SERVER', 'S'): p10_server.MessageHandler,
     ('NICK', 'N'): p10_nick.MessageHandler,
     ('END_OF_BURST', 'EB'): p10_endofburst.MessageHandler,
+    ('END_OF_BURST_ACK', 'EA'): p10_endofburst_ack.MessageHandler,
 }
 
 
