@@ -81,7 +81,7 @@ class Service(object):
         return self.conn.sendall(six.b(line + '\n'))
 
     def burst_servers(self):
-        for svr_num, svr in self.network.servers.iteritems():
+        for svr_num, svr in six.iteritems(self.network.servers):
             if svr_num == self.server.num.str:
                 continue
             self.send(consts.FMT_SERVER,
@@ -95,7 +95,7 @@ class Service(object):
                       svr.info)
 
     def burst_users(self):
-        for usr_num, usr in self.network.users.iteritems():
+        for usr_num, usr in six.iteritems(self.network.users):
             self.send(consts.FMT_NICK,
                       self.server.num,
                       usr.nick,
@@ -157,7 +157,7 @@ class Service(object):
                 if data == '':
                     raise SocketClosedException()
 
-                buf += data
+                buf += data.decode('utf-8')
             except SocketClosedException:
                 self.logger.warning('Socket closed, exiting')
                 break
