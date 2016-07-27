@@ -1,4 +1,3 @@
-# AE S services.ircplanet.net 2 0 1116989941 P10 M[AB] +s :Network Services
 import six
 
 from ircu import consts
@@ -8,7 +7,7 @@ from ircu import util
 class Server(object):
     def __init__(self, numeric, name, info, max_clients,
                  uplink_num=None, num_hops=0, boot_time=0, link_time=0,
-                 proto=None, flags=None):
+                 proto=None, modes=None):
         self._numeric = util.Numeric(numeric)
         self._name = name
         self._info = info
@@ -18,7 +17,7 @@ class Server(object):
         if isinstance(max_clients, six.string_types):
             self._max_clients = util.base64_to_int(max_clients)
 
-        self._flags = flags
+        self._modes = modes
         self._boot_time = boot_time
         self._link_time = link_time
 
@@ -43,3 +42,7 @@ class Server(object):
     @property
     def max_clients(self):
         return self._max_clients
+
+    @property
+    def modes(self):
+        return self._modes

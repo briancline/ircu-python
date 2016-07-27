@@ -22,7 +22,7 @@ class MessageHandler(p10.MessageHandler):
                             boot_time=int(args[2]),
                             link_time=int(args[3]),
                             proto=args[4],
-                            flags=args[6])
+                            modes=args[6])
         self.network.servers[svr_num] = svr
 
     def server(self, client, source, args):
@@ -37,5 +37,5 @@ class MessageHandler(p10.MessageHandler):
                             boot_time=int(args[2]),
                             link_time=int(args[3]),
                             proto=args[4],
-                            flags=args[6])
+                            modes=args[6])
         self.network.servers[svr_num] = svr
