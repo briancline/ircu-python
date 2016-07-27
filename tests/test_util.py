@@ -2,6 +2,90 @@ import unittest
 
 from ircu import consts
 from ircu import util
+from ircu.util import string
+
+
+class TestStringMethods(unittest.TestCase):
+    def test_irc_split(self):
+        cases = [
+            ('PASS :muse',
+             ['PASS', 'muse']),
+
+            ('SERVER unit.test 1 1469157290 1469598599 J10 MHAD] +h6 :test',
+             ['SERVER', 'unit.test', '1', '1469157290', '1469598599', 'J10',
+              'MHAD]', '+h6', 'test']),
+
+            ('MH N bc 1 1469580927 ~bc unit.test +owgrxf brian:1469589777 '
+             'endurance.nasa.gov B]AAAB MHAAR :this is a test',
+             ['MH', 'N', 'bc', '1', '1469580927', '~bc', 'unit.test',
+              '+owgrxf', 'brian:1469589777', 'endurance.nasa.gov', 'B]AAAB',
+              'MHAAR', 'this is a test']),
+
+            ('MH EB',
+             ['MH', 'EB']),
+            ('MH EB ',  # ircu actually does this...
+             ['MH', 'EB', '']),
+        ]
+
+        for line, splits in cases:
+            self.assertEqual(splits, string.irc_split(line))
+
+    def test_irc_buffer_lines(self):
+        buf = (
+            'PASS :muse\r\n'
+            'SERVER unit.test 1 1468138272 1468143125 J10 F1A]] +h6 '
+            ':the dream is collapsing\r\n'
+            'F1 N brian 1 1468138402 ~bc 10.0.0.83 +oiwg AKAABT F1AAA :hi\r\n'
+            'F1 EB \r\n')
+
+        expected = [
+            ('SERVER unit.test 1 1468138272 1468143125 J10 F1A]] +h6 '
+             ':the dream is collapsing\r\n'
+             'F1 N brian 1 1468138402 ~bc 10.0.0.83 +oiwg AKAABT F1AAA :hi\r\n'
+             'F1 EB \r\n',
+             'PASS :muse'),
+
+            ('F1 N brian 1 1468138402 ~bc 10.0.0.83 +oiwg AKAABT F1AAA :hi\r\n'
+             'F1 EB \r\n',
+             'SERVER unit.test 1 1468138272 1468143125 J10 F1A]] +h6 '
+             ':the dream is collapsing'),
+
+            ('F1 EB \r\n',
+             'F1 N brian 1 1468138402 ~bc 10.0.0.83 +oiwg AKAABT F1AAA :hi'),
+
+            ('',
+             'F1 EB '),
+        ]
+
+        ii = 0
+        for newbuf, line in string.irc_buffer_lines(buf):
+            print(ii)
+            exp_newbuf, exp_line = expected[ii]
+            self.assertEqual(exp_newbuf, newbuf)
+            self.assertEqual(exp_line, line)
+            ii += 1
+
+        self.assertEqual(len(expected), ii)
+
+    def test_irc_buffer_lines_incomplete(self):
+        buf = (
+            'PASS :muse\r\n'
+            'SERVER unit.test 1 1468138272 1468143125 J10 F1A]] ')
+
+        expected = [
+            ('SERVER unit.test 1 1468138272 1468143125 J10 F1A]] ',
+             'PASS :muse'),
+        ]
+
+        ii = 0
+        for newbuf, line in string.irc_buffer_lines(buf):
+            print(ii)
+            exp_newbuf, exp_line = expected[ii]
+            self.assertEqual(exp_newbuf, newbuf)
+            self.assertEqual(exp_line, line)
+            ii += 1
+
+        self.assertEqual(len(expected), ii)
 
 
 class TestBase64(unittest.TestCase):
