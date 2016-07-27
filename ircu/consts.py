@@ -4,6 +4,7 @@ version_str = '.'.join(str(n) for n in version)
 
 FMT_PASS = 'PASS :%s'
 FMT_SERVER_SELF = 'SERVER %s 1 %lu %lu J10 %s%s +%s :%s'
+FMT_PONG = '%s Z %s %s'
 
 DEFAULT_MAX_CLIENTS = 262144
 
